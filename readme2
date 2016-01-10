@@ -1,0 +1,39 @@
+/* Tema 2 - Protocoale de comunicatie */
+
+/* Georgiana-Liliana Baclava - 322CB */
+
+
+
+	Pentru simularea unui protocol de routare am folosit functiile din fisierul sim.cpp carora le-am implementat mai intai functionalitatea.
+
+	Am folosit urmatoarele structuri:
+
+- intrare_t pentru a retine vecinul si costul unui router;
+
+- msg_t pentru mesajul de gestionare care contine un vector de structuri intrare_t, sursa mesajului, versiunea si numarul vecinilor;
+
+- mesaj pentru mesajul routabil, care contine sursa, destinatia, timpul, tagul si mesajul propriu-zis ca un string;
+
+- event pentru evenimentul declansat care contine cele 2 routere implicate, r1 si r2, timpul la care se declanseaza, tipul si costul legaturii adaugate sau rupte(cost dummy).
+
+	Clasa Router contine topologia unui router sub forma unei matrici de adiacenta, tabela de routare, precum si un vector in care retin versiunea mesajului de gestionare primit.
+
+	Am imlementat urmatoarele functionalitati pentru functiile date in scheletul de cod:
+
+- init_sim(int argc, char **argv) Deschid fisierul de topologie, retin in N numarul de routere, creez un vector routers in care retin N obiecte de tip Router. Construiesc topologiile fiecarui router pe baza informatiilor citite din fisier.
+Fiecare router trimite apoi mesajul de gestionare fiind reprezentat ca (char *) la o structura de tipul msg_t.
+Creez un vector de intrari in care retin vecinii si costurile routerului i, setez sursa mesajului ca id routerului i, numarul de vecini si trimit mesajul fiecarui vecin al routerului i in parte. 
+Citesc apoi mesajele si le retin in vectorul de mesaje vmess, iar evenimentele in vectorul events;
+
+- trigger_events() Iterez prin vectorul de evenimente pentru a vedea care sunt cele ce trebuie declansate la timpul curent.
+Retin intr-un vector routs routerele implicate in eveniment. In functie de tipul evenimentului refac topologia routerelor implicate.
+Iterez prin vectorul de routere routs pentru ca fiecare dintre aceste routere sa isi trimita mesajul de gestionare vecinilor sai;
+
+- process_messages() Verific mai intai mesajele routabile ce trebuie trimise la timpul curent. Calculez next_hopul de la sursa mesajului la destinatia acestuia, iar routerul sursa il trimite next_hopului.
+Apoi, pentru fiecare router verific ce mesaje are de primit.
+De exemplu, pentru cele de gestionare. Daca mesajul primit este mai vechi sau identic cu cel primit anterior, nu il mai retin si nici nu ii dau forward vecinilor. Altfel, updatez versiunea mesajului in vectorul de versiuni ale mesajelor de la fiecare router, updatez topologia si il trimit mai departe vecinilor.
+Pentru mesajele de routare, verific daca destinatia mesajului primit este chiar id routerului curent. In caz afirmativ, mesajul a ajuns la destinatie si se verifica daca routerul curent mai are si alte mesaje de primit. In cazul in care routerul curent este doar un hop in drumul mesajului, se calculeza next_hopul de la routerul curent la destinatie si se trimite next_hopului.
+
+- update_routing_table() Pentru a calcula next_hopul, mai exact tabela de routare pentru fiecare router, am folosit algoritmul Floyd Warshall prezentat amanuntit in laboratorul de drumuri minime de la PA de pe elf.cs
+Folosesc 2 matrici, una pentru distante si alta pentru next_hopuri. Pentru inceput, initializez matricea distantelor cu costurile catre fiecare router, iar cea a next_hopurilor cu routerele vecine.
+Drumul minim il determin cu ajutorul functiei Floyd Warshall(r,distances,next_hop). Verific distantele dintre hopuri si o aleg pe cea mai mica, next_hopul devenind hopul catre care distanta este mai mica. In cazul in care 2 distante sunt egale, se alege next_hopul cu id cel mai mic.
